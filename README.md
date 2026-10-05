@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 
 <title>Highway Rush</title>
 
@@ -58,13 +57,51 @@ canvas{
   z-index:5;
 }
 
+/* =========================
+LEFT RIGHT BUTTONS
+========================= */
+
+#controls{
+  position:absolute;
+  bottom:25px;
+  left:0;
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  padding:0 25px;
+  z-index:10;
+  pointer-events:none;
+}
+
+.controlBtn{
+  width:75px;
+  height:75px;
+  border-radius:50%;
+  border:3px solid rgba(255,255,255,.8);
+  background:rgba(0,0,0,.45);
+  color:white;
+  font-size:42px;
+  font-weight:bold;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  user-select:none;
+  pointer-events:auto;
+  box-shadow:0 4px 12px rgba(0,0,0,.4);
+}
+
+.controlBtn:active{
+  transform:scale(.90);
+  background:rgba(255,255,255,.35);
+}
+
 #hint{
   position:absolute;
-  bottom:18px;
+  bottom:108px;
   left:50%;
   transform:translateX(-50%);
   color:white;
-  opacity:.7;
+  opacity:.75;
   font-size:14px;
   z-index:5;
 }
@@ -112,23 +149,61 @@ button{
 <div id="score">Score: 0</div>
 <div id="coins">🪙 0</div>
 
-<div id="hint">Swipe ← → to move</div>
+<div id="hint">Swipe or use buttons</div>
+
+
+<!-- LEFT RIGHT BUTTONS -->
+
+<div id="controls">
+
+  <div
+    class="controlBtn"
+    id="leftBtn">
+    ◀
+  </div>
+
+  <div
+    class="controlBtn"
+    id="rightBtn">
+    ▶
+  </div>
+
+</div>
+
 
 <div id="gameOver">
-  <h1>GAME OVER</h1>
-  <p id="finalScore">Score: 0</p>
-  <button onclick="restartGame()">PLAY AGAIN</button>
+
+<h1>GAME OVER</h1>
+
+<p id="finalScore">
+Score: 0
+</p>
+
+<button onclick="restartGame()">
+PLAY AGAIN
+</button>
+
 </div>
 
 </div>
+
 
 <script>
 
-const canvas=document.getElementById("canvas");
-const ctx=canvas.getContext("2d");
+const canvas=
+document.getElementById("canvas");
+
+const ctx=
+canvas.getContext("2d");
 
 let W,H;
-let dpr=Math.min(window.devicePixelRatio||1,2);
+
+let dpr=
+Math.min(
+  window.devicePixelRatio||1,
+  2
+);
+
 
 function resize(){
 
@@ -141,11 +216,18 @@ function resize(){
   canvas.style.width=W+"px";
   canvas.style.height=H+"px";
 
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.setTransform(
+    dpr,0,0,dpr,0,0
+  );
 }
 
-window.addEventListener("resize",resize);
+window.addEventListener(
+  "resize",
+  resize
+);
+
 resize();
+
 
 /* =========================
 GAME VARIABLES
@@ -154,9 +236,9 @@ GAME VARIABLES
 let running=true;
 
 let score=0;
+
 let coinCount=0;
 
-/* ROAD SPEED SLOW */
 let speed=.20;
 
 let roadOffset=0;
@@ -164,21 +246,37 @@ let roadOffset=0;
 let playerLane=1;
 
 let playerX=0;
+
 let targetX=0;
 
-/* FAST PLAYER MOVEMENT */
-let playerMoveSpeed=0.45;
+
+/* FAST PLAYER */
+
+let playerMoveSpeed=.78;
+
 
 let objects=[];
-let scenery=[];
 
 let spawnTimer=0;
-let sceneryTimer=0;
 
-let lastTime=performance.now();
+let lastTime=
+performance.now();
+
+
+/* SWIPE */
 
 let swipeStartX=0;
 let swipeStartY=0;
+
+
+/* TRAIN */
+
+let trainX=-600;
+
+let trainSpeed=.11;
+
+let trainY=H*.40;
+
 
 /* =========================
 ROAD
@@ -188,26 +286,32 @@ function roadWidth(y){
 
   let horizon=H*.28;
 
-  let t=(y-horizon)/(H-horizon);
+  let t=
+  (y-horizon)/
+  (H-horizon);
 
-  t=Math.max(0,Math.min(1,t));
+  t=
+  Math.max(
+    0,
+    Math.min(1,t)
+  );
 
   return 100+t*W*.92;
 }
 
-function roadCenter(){
-  return W/2;
-}
 
 function laneX(lane,y){
 
-  let rw=roadWidth(y);
+  let rw=
+  roadWidth(y);
 
-  let laneW=rw/3;
+  let laneW=
+  rw/3;
 
-  return roadCenter()-rw/2+
-         laneW*(lane+.5);
+  return W/2-rw/2+
+  laneW*(lane+.5);
 }
+
 
 /* =========================
 BACKGROUND
@@ -215,18 +319,32 @@ BACKGROUND
 
 function drawBackground(){
 
-  /* SKY */
-
-  let sky=ctx.createLinearGradient(
+  let sky=
+  ctx.createLinearGradient(
     0,0,0,H*.55
   );
 
-  sky.addColorStop(0,"#174b91");
-  sky.addColorStop(.55,"#43a8d1");
-  sky.addColorStop(1,"#9bd6dc");
+  sky.addColorStop(
+    0,
+    "#1660a0"
+  );
+
+  sky.addColorStop(
+    .55,
+    "#55b5d0"
+  );
+
+  sky.addColorStop(
+    1,
+    "#b5e0d1"
+  );
 
   ctx.fillStyle=sky;
-  ctx.fillRect(0,0,W,H*.60);
+
+  ctx.fillRect(
+    0,0,W,H*.60
+  );
+
 
   /* SUN */
 
@@ -235,27 +353,90 @@ function drawBackground(){
   ctx.arc(
     W*.82,
     H*.13,
-    35,
+    38,
     0,
     Math.PI*2
   );
 
-  ctx.fillStyle="#ffe58a";
+  ctx.fillStyle="#ffe99a";
+
   ctx.fill();
+
 
   /* GROUND */
 
-  ctx.fillStyle="#4c9b45";
-  ctx.fillRect(0,H*.43,W,H*.57);
+  ctx.fillStyle="#62a94b";
 
-  /* DISTANT TREES */
+  ctx.fillRect(
+    0,H*.43,
+    W,H*.57
+  );
 
-  drawTree(60,H*.37,.65);
-  drawTree(W-60,H*.37,.7);
 
-  drawTree(W*.25,H*.39,.5);
-  drawTree(W*.75,H*.39,.5);
+  /* MOUNTAINS */
+
+  ctx.fillStyle="#43835a";
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    0,H*.43
+  );
+
+  ctx.lineTo(
+    W*.12,H*.34
+  );
+
+  ctx.lineTo(
+    W*.23,H*.42
+  );
+
+  ctx.lineTo(
+    W*.38,H*.33
+  );
+
+  ctx.lineTo(
+    W*.52,H*.42
+  );
+
+  ctx.lineTo(
+    W*.70,H*.34
+  );
+
+  ctx.lineTo(
+    W*.84,H*.42
+  );
+
+  ctx.lineTo(
+    W,H*.34
+  );
+
+  ctx.lineTo(
+    W,H*.52
+  );
+
+  ctx.lineTo(
+    0,H*.52
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
+
+
+  drawTree(
+    55,
+    H*.40,
+    .65
+  );
+
+  drawTree(
+    W-55,
+    H*.40,
+    .7
+  );
 }
+
 
 /* =========================
 TREE
@@ -266,290 +447,570 @@ function drawTree(x,y,s){
   ctx.save();
 
   ctx.translate(x,y);
+
   ctx.scale(s,s);
 
-  /* trunk */
+  ctx.fillStyle="#704321";
 
-  ctx.fillStyle="#70401f";
-  ctx.fillRect(-7,0,14,70);
+  ctx.fillRect(
+    -7,0,14,70
+  );
 
-  /* leaves */
-
-  ctx.fillStyle="#176b35";
+  ctx.fillStyle="#1b7137";
 
   ctx.beginPath();
-  ctx.arc(0,-5,32,0,Math.PI*2);
+
+  ctx.arc(
+    0,-5,
+    34,
+    0,
+    Math.PI*2
+  );
+
   ctx.fill();
 
   ctx.beginPath();
-  ctx.arc(-25,15,25,0,Math.PI*2);
+
+  ctx.arc(
+    -27,15,
+    25,
+    0,
+    Math.PI*2
+  );
+
   ctx.fill();
 
   ctx.beginPath();
-  ctx.arc(25,15,25,0,Math.PI*2);
+
+  ctx.arc(
+    27,15,
+    25,
+    0,
+    Math.PI*2
+  );
+
   ctx.fill();
 
   ctx.restore();
 }
+
 
 /* =========================
 HOUSE
 ========================= */
 
-function drawHouse(x,y,s,side){
+function drawHouse(x,y,s){
 
   ctx.save();
 
   ctx.translate(x,y);
+
   ctx.scale(s,s);
 
-  /* shadow */
 
-  ctx.fillStyle="rgba(0,0,0,.2)";
-  ctx.fillRect(-42,48,84,10);
-
-  /* wall */
-
-  ctx.fillStyle="#f1c27d";
-  ctx.fillRect(-40,0,80,52);
-
-  /* roof */
-
-  ctx.fillStyle="#a83e2b";
+  ctx.fillStyle=
+  "rgba(0,0,0,.18)";
 
   ctx.beginPath();
 
-  ctx.moveTo(-50,0);
-  ctx.lineTo(0,-38);
-  ctx.lineTo(50,0);
+  ctx.ellipse(
+    0,58,
+    55,10,
+    0,0,Math.PI*2
+  );
+
+  ctx.fill();
+
+
+  /* WALL */
+
+  ctx.fillStyle="#f0c27b";
+
+  ctx.fillRect(
+    -43,0,
+    86,55
+  );
+
+
+  /* ROOF */
+
+  ctx.fillStyle="#9e3c27";
+
+  ctx.beginPath();
+
+  ctx.moveTo(-54,0);
+
+  ctx.lineTo(0,-43);
+
+  ctx.lineTo(54,0);
 
   ctx.closePath();
 
   ctx.fill();
 
-  /* door */
+
+  /* DOOR */
 
   ctx.fillStyle="#70401f";
-  ctx.fillRect(-9,25,18,27);
 
-  /* windows */
+  ctx.fillRect(
+    -10,25,
+    20,30
+  );
 
-  ctx.fillStyle="#7ed5e8";
 
-  ctx.fillRect(-31,14,16,15);
-  ctx.fillRect(15,14,16,15);
+  /* WINDOWS */
 
-  /* window lines */
+  ctx.fillStyle="#75d1e8";
 
-  ctx.strokeStyle="#315b65";
-  ctx.lineWidth=2;
+  ctx.fillRect(
+    -34,15,
+    18,16
+  );
 
-  ctx.beginPath();
-  ctx.moveTo(-23,14);
-  ctx.lineTo(-23,29);
-  ctx.moveTo(-31,21.5);
-  ctx.lineTo(-15,21.5);
-  ctx.moveTo(23,14);
-  ctx.lineTo(23,29);
-  ctx.moveTo(15,21.5);
-  ctx.lineTo(31,21.5);
-  ctx.stroke();
+  ctx.fillRect(
+    16,15,
+    18,16
+  );
+
 
   ctx.restore();
 }
 
+
 /* =========================
-PERSON
+PEOPLE
 ========================= */
 
-function drawPerson(x,y,s){
+function drawPerson(
+  x,y,s,shirt,skin
+){
 
   ctx.save();
 
   ctx.translate(x,y);
+
   ctx.scale(s,s);
 
-  /* head */
 
-  ctx.fillStyle="#d99a68";
+  /* SHADOW */
+
+  ctx.fillStyle=
+  "rgba(0,0,0,.25)";
 
   ctx.beginPath();
-  ctx.arc(0,-22,7,0,Math.PI*2);
+
+  ctx.ellipse(
+    0,25,
+    13,5,
+    0,0,Math.PI*2
+  );
+
   ctx.fill();
 
-  /* body */
 
-  ctx.fillStyle="#2474c8";
-  ctx.fillRect(-7,-14,14,22);
+  /* HEAD */
 
-  /* legs */
+  ctx.fillStyle=skin;
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,-25,
+    10,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+
+  /* HAIR */
+
+  ctx.fillStyle="#211810";
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,-30,
+    10,
+    Math.PI,
+    Math.PI*2
+  );
+
+  ctx.fill();
+
+
+  /* BODY */
+
+  ctx.fillStyle=shirt;
+
+  ctx.beginPath();
+
+  ctx.roundRect(
+    -10,-14,
+    20,30,
+    5
+  );
+
+  ctx.fill();
+
+
+  /* ARMS */
+
+  ctx.strokeStyle=skin;
+
+  ctx.lineWidth=6;
+
+  ctx.beginPath();
+
+  ctx.moveTo(-8,-7);
+
+  ctx.lineTo(-19,8);
+
+  ctx.moveTo(8,-7);
+
+  ctx.lineTo(19,8);
+
+  ctx.stroke();
+
+
+  /* LEGS */
 
   ctx.strokeStyle="#222";
-  ctx.lineWidth=5;
+
+  ctx.lineWidth=7;
 
   ctx.beginPath();
 
-  ctx.moveTo(-3,8);
-  ctx.lineTo(-8,22);
+  ctx.moveTo(-4,14);
 
-  ctx.moveTo(3,8);
-  ctx.lineTo(8,22);
+  ctx.lineTo(-10,31);
 
-  ctx.stroke();
+  ctx.moveTo(4,14);
 
-  /* arms */
-
-  ctx.beginPath();
-
-  ctx.moveTo(-6,-8);
-  ctx.lineTo(-15,3);
-
-  ctx.moveTo(6,-8);
-  ctx.lineTo(15,3);
+  ctx.lineTo(10,31);
 
   ctx.stroke();
+
 
   ctx.restore();
 }
 
+
 /* =========================
-RAILWAY TRACK
+VILLAGE
+========================= */
+
+function drawVillage(){
+
+  drawHouse(
+    W*.08,
+    H*.57,
+    .85
+  );
+
+  drawHouse(
+    W*.17,
+    H*.72,
+    .62
+  );
+
+  drawHouse(
+    W*.91,
+    H*.59,
+    .80
+  );
+
+  drawHouse(
+    W*.82,
+    H*.74,
+    .62
+  );
+
+
+  drawPerson(
+    W*.27,
+    H*.66,
+    1.05,
+    "#2674c8",
+    "#c98251"
+  );
+
+  drawPerson(
+    W*.72,
+    H*.68,
+    1.05,
+    "#d14b58",
+    "#b87345"
+  );
+
+  drawPerson(
+    W*.12,
+    H*.82,
+    1.15,
+    "#3a9b55",
+    "#c98251"
+  );
+
+  drawPerson(
+    W*.88,
+    H*.84,
+    1.15,
+    "#d88a29",
+    "#b87345"
+  );
+
+
+  drawTree(
+    W*.035,
+    H*.68,
+    .7
+  );
+
+  drawTree(
+    W*.965,
+    H*.70,
+    .7
+  );
+}
+
+
+/* =========================
+RAILWAY
 ========================= */
 
 function drawRailway(){
 
-  let horizon=H*.30;
+  let horizon=H*.31;
 
-  let leftX=W*.05;
-  let rightX=W*.25;
+  let rail1=W*.045;
 
-  /* sleepers */
+  let rail2=W*.105;
 
-  for(let y=horizon;y<H;y+=42){
 
-    let t=(y-horizon)/(H-horizon);
+  ctx.strokeStyle="#bcbcbc";
 
-    let x1=leftX-t*20;
-    let x2=rightX+t*20;
-
-    ctx.strokeStyle="#65432c";
-    ctx.lineWidth=Math.max(3,t*12);
-
-    ctx.beginPath();
-
-    ctx.moveTo(x1,y);
-    ctx.lineTo(x2,y);
-
-    ctx.stroke();
-  }
-
-  /* rails */
-
-  ctx.strokeStyle="#b9b9b9";
   ctx.lineWidth=4;
 
   ctx.beginPath();
 
-  ctx.moveTo(leftX,horizon);
-  ctx.lineTo(leftX-20,H);
+  ctx.moveTo(
+    rail1,
+    horizon
+  );
 
-  ctx.moveTo(rightX,horizon);
-  ctx.lineTo(rightX+20,H);
+  ctx.lineTo(
+    rail1-15,
+    H
+  );
+
+  ctx.moveTo(
+    rail2,
+    horizon
+  );
+
+  ctx.lineTo(
+    rail2+20,
+    H
+  );
 
   ctx.stroke();
 
-  /* second pair */
 
-  ctx.strokeStyle="#777";
-  ctx.lineWidth=3;
+  for(
+    let y=horizon;
+    y<H;
+    y+=30
+  ){
 
-  ctx.beginPath();
+    let t=
+    (y-horizon)/
+    (H-horizon);
 
-  ctx.moveTo(leftX+18,horizon);
-  ctx.lineTo(leftX,H);
+    let x1=
+    rail1-t*15;
 
-  ctx.moveTo(rightX+18,horizon);
-  ctx.lineTo(rightX+38,H);
+    let x2=
+    rail2+t*20;
 
-  ctx.stroke();
+    ctx.strokeStyle="#65442d";
+
+    ctx.lineWidth=
+    4+t*8;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      x1-10,
+      y
+    );
+
+    ctx.lineTo(
+      x2+10,
+      y
+    );
+
+    ctx.stroke();
+  }
 }
+
 
 /* =========================
-SIDE SCENERY
+TRAIN
 ========================= */
 
-function drawSideScenery(){
+function drawTrain(){
 
-  /* houses */
+  let y=trainY;
 
-  drawHouse(
-    W*.08,
-    H*.58,
-    .8,
-    "left"
+  let engineW=170;
+
+  let coachW=75;
+
+
+  ctx.fillStyle=
+  "rgba(0,0,0,.25)";
+
+  ctx.fillRect(
+    trainX,
+    y+53,
+    engineW+coachW*3,
+    8
   );
 
-  drawHouse(
-    W*.90,
-    H*.60,
-    .75,
-    "right"
+
+  /* ENGINE */
+
+  ctx.fillStyle="#d53a32";
+
+  ctx.fillRect(
+    trainX,
+    y,
+    engineW,
+    48
   );
 
-  drawHouse(
-    W*.16,
-    H*.72,
-    .65,
-    "left"
+
+  /* CABIN */
+
+  ctx.fillStyle="#b92e2b";
+
+  ctx.fillRect(
+    trainX+25,
+    y-25,
+    55,
+    25
   );
 
-  drawHouse(
-    W*.83,
-    H*.76,
-    .65,
-    "right"
+
+  /* WINDOWS */
+
+  ctx.fillStyle="#9de0ec";
+
+  ctx.fillRect(
+    trainX+35,
+    y-18,
+    17,14
   );
 
-  /* people */
-
-  drawPerson(
-    W*.30,
-    H*.66,
-    .75
+  ctx.fillRect(
+    trainX+58,
+    y-18,
+    17,14
   );
 
-  drawPerson(
-    W*.70,
-    H*.70,
-    .75
-  );
 
-  drawPerson(
-    W*.11,
-    H*.83,
-    .9
-  );
+  /* COACHES */
 
-  drawPerson(
-    W*.89,
-    H*.84,
-    .9
-  );
+  for(
+    let i=0;
+    i<3;
+    i++
+  ){
 
-  /* trees */
+    let bx=
+    trainX+
+    engineW+
+    i*coachW;
 
-  drawTree(
-    W*.04,
-    H*.68,
-    .65
-  );
+    ctx.fillStyle=
+    i%2===0
+    ?"#e0b52e"
+    :"#d79d25";
 
-  drawTree(
-    W*.96,
-    H*.70,
-    .65
-  );
+    ctx.fillRect(
+      bx,
+      y+3,
+      coachW-5,
+      45
+    );
+
+
+    ctx.fillStyle="#75c9df";
+
+    for(
+      let w=0;
+      w<2;
+      w++
+    ){
+
+      ctx.fillRect(
+        bx+10+w*27,
+        y+12,
+        18,14
+      );
+    }
+  }
+
+
+  /* WHEELS */
+
+  ctx.fillStyle="#202020";
+
+  for(
+    let i=0;
+    i<10;
+    i++
+  ){
+
+    let wx=
+    trainX+
+    15+
+    i*40;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      wx,
+      y+52,
+      7,
+      0,
+      Math.PI*2
+    );
+
+    ctx.fill();
+  }
 }
+
+
+function updateTrain(dt){
+
+  trainX+=
+  trainSpeed*dt;
+
+  let trainWidth=
+  170+75*3;
+
+  if(
+    trainX>W+100
+  ){
+
+    trainX=
+    -trainWidth-100;
+  }
+}
+
 
 /* =========================
 ROAD
@@ -561,7 +1022,6 @@ function drawRoad(){
 
   let bottomWidth=W*1.05;
 
-  /* road */
 
   ctx.fillStyle="#293238";
 
@@ -591,45 +1051,77 @@ function drawRoad(){
 
   ctx.fill();
 
-  /* road edges */
 
-  ctx.strokeStyle="#e7e7e7";
+  /* EDGES */
+
+  ctx.strokeStyle="#eeeeee";
+
   ctx.lineWidth=5;
 
   ctx.beginPath();
 
-  ctx.moveTo(W/2-50,horizon);
-  ctx.lineTo(W/2-bottomWidth/2,H);
+  ctx.moveTo(
+    W/2-50,
+    horizon
+  );
 
-  ctx.moveTo(W/2+50,horizon);
-  ctx.lineTo(W/2+bottomWidth/2,H);
+  ctx.lineTo(
+    W/2-bottomWidth/2,
+    H
+  );
+
+  ctx.moveTo(
+    W/2+50,
+    horizon
+  );
+
+  ctx.lineTo(
+    W/2+bottomWidth/2,
+    H
+  );
 
   ctx.stroke();
 
-  /* lane markings */
+
+  /* LANE MARKINGS */
 
   let dash=55;
 
   for(
-    let y=horizon+(roadOffset%dash)-dash;
+    let y=
+    horizon+
+    (roadOffset%dash)-
+    dash;
+
     y<H;
+
     y+=dash
   ){
 
-    let t=(y-horizon)/(H-horizon);
+    let t=
+    (y-horizon)/
+    (H-horizon);
 
-    let rw=roadWidth(y);
-    let laneW=rw/3;
+    let rw=
+    roadWidth(y);
+
+    let laneW=
+    rw/3;
 
     ctx.fillStyle="#eeeeee";
 
-    for(let i=1;i<3;i++){
+    for(
+      let i=1;
+      i<3;
+      i++
+    ){
 
       let x=
-        W/2-rw/2+
-        laneW*i;
+      W/2-rw/2+
+      laneW*i;
 
-      let markH=18+t*30;
+      let markH=
+      18+t*30;
 
       ctx.fillRect(
         x-3,
@@ -641,130 +1133,170 @@ function drawRoad(){
   }
 }
 
+
 /* =========================
-PLAYER CAR
+PLAYER
 ========================= */
 
 function drawPlayer(){
 
   let y=H*.76;
 
-  /* FAST SMOOTH MOVEMENT */
+
+  /* FAST MOVEMENT */
 
   playerX +=
-    (targetX-playerX)*
-    playerMoveSpeed;
+  (targetX-playerX)*
+  playerMoveSpeed;
+
 
   ctx.save();
 
-  ctx.translate(playerX,y);
+  ctx.translate(
+    playerX,
+    y
+  );
 
-  /* shadow */
 
-  ctx.fillStyle="rgba(0,0,0,.35)";
+  /* SHADOW */
+
+  ctx.fillStyle=
+  "rgba(0,0,0,.35)";
 
   ctx.beginPath();
 
   ctx.ellipse(
-    0,
-    48,
-    34,
-    10,
-    0,
-    0,
-    Math.PI*2
+    0,48,
+    34,10,
+    0,0,Math.PI*2
   );
 
   ctx.fill();
 
-  /* car body */
+
+  /* CAR */
 
   ctx.fillStyle="#e52e35";
 
   ctx.beginPath();
 
   ctx.roundRect(
-    -25,
-    -45,
-    50,
-    90,
+    -25,-45,
+    50,90,
     10
   );
 
   ctx.fill();
 
-  /* roof/window */
+
+  /* ROOF */
 
   ctx.fillStyle="#172b3d";
 
   ctx.beginPath();
 
   ctx.roundRect(
-    -17,
-    -30,
-    34,
-    35,
+    -17,-30,
+    34,35,
     7
   );
 
   ctx.fill();
 
-  /* windshield */
+
+  /* GLASS */
 
   ctx.fillStyle="#65b8d1";
 
   ctx.beginPath();
 
   ctx.moveTo(-14,-25);
+
   ctx.lineTo(14,-25);
+
   ctx.lineTo(13,-8);
+
   ctx.lineTo(-13,-8);
 
   ctx.closePath();
 
   ctx.fill();
 
-  /* lights */
+
+  /* LIGHTS */
 
   ctx.fillStyle="#fff4a3";
 
-  ctx.fillRect(-21,-39,9,7);
-  ctx.fillRect(12,-39,9,7);
+  ctx.fillRect(
+    -21,-39,
+    9,7
+  );
 
-  /* back lights */
+  ctx.fillRect(
+    12,-39,
+    9,7
+  );
+
+
+  /* BACK LIGHT */
 
   ctx.fillStyle="#ff2525";
 
-  ctx.fillRect(-21,32,9,7);
-  ctx.fillRect(12,32,9,7);
+  ctx.fillRect(
+    -21,32,
+    9,7
+  );
 
-  /* wheels */
+  ctx.fillRect(
+    12,32,
+    9,7
+  );
+
+
+  /* WHEELS */
 
   ctx.fillStyle="#111";
 
-  ctx.fillRect(-29,-28,7,22);
-  ctx.fillRect(22,-28,7,22);
+  ctx.fillRect(
+    -29,-28,
+    7,22
+  );
 
-  ctx.fillRect(-29,18,7,22);
-  ctx.fillRect(22,18,7,22);
+  ctx.fillRect(
+    22,-28,
+    7,22
+  );
+
+  ctx.fillRect(
+    -29,18,
+    7,22
+  );
+
+  ctx.fillRect(
+    22,18,
+    7,22
+  );
 
   ctx.restore();
 }
 
+
 /* =========================
-OBSTACLE
+ENEMY
 ========================= */
 
 function drawObstacle(o){
 
   let y=o.y;
+
   let s=o.size;
 
   ctx.save();
 
-  ctx.translate(o.x,y);
-
-  /* car */
+  ctx.translate(
+    o.x,
+    y
+  );
 
   ctx.fillStyle="#2468d8";
 
@@ -780,7 +1312,6 @@ function drawObstacle(o){
 
   ctx.fill();
 
-  /* window */
 
   ctx.fillStyle="#172b3d";
 
@@ -791,7 +1322,6 @@ function drawObstacle(o){
     s*.55
   );
 
-  /* lights */
 
   ctx.fillStyle="#ffe889";
 
@@ -812,6 +1342,7 @@ function drawObstacle(o){
   ctx.restore();
 }
 
+
 /* =========================
 COIN
 ========================= */
@@ -820,7 +1351,10 @@ function drawCoin(o){
 
   ctx.save();
 
-  ctx.translate(o.x,o.y);
+  ctx.translate(
+    o.x,
+    o.y
+  );
 
   ctx.beginPath();
 
@@ -833,38 +1367,52 @@ function drawCoin(o){
   );
 
   ctx.fillStyle="#ffd42a";
+
   ctx.fill();
 
   ctx.strokeStyle="#fff09b";
+
   ctx.lineWidth=3;
+
   ctx.stroke();
+
 
   ctx.fillStyle="#9a6a00";
 
   ctx.font=
-    Math.max(10,o.size)+"px Arial";
+  Math.max(10,o.size)+
+  "px Arial";
 
   ctx.textAlign="center";
+
   ctx.textBaseline="middle";
 
-  ctx.fillText("₹",0,1);
+  ctx.fillText(
+    "₹",
+    0,
+    1
+  );
 
   ctx.restore();
 }
 
+
 /* =========================
-SPAWN OBJECT
+SPAWN
 ========================= */
 
 function spawnObject(){
 
   let lane=
-    Math.floor(Math.random()*3);
+  Math.floor(
+    Math.random()*3
+  );
 
   let type=
-    Math.random()<.28
-    ?"coin"
-    :"car";
+  Math.random()<.28
+  ?"coin"
+  :"car";
+
 
   objects.push({
 
@@ -872,13 +1420,17 @@ function spawnObject(){
 
     y:H*.28-50,
 
-    x:laneX(lane,H*.28),
+    x:laneX(
+      lane,
+      H*.28
+    ),
 
     type:type,
 
     size:20
   });
 }
+
 
 /* =========================
 UPDATE OBJECTS
@@ -892,44 +1444,61 @@ function updateObjects(dt){
     i--
   ){
 
-    let o=objects[i];
+    let o=
+    objects[i];
 
-    o.y+=speed*dt;
+    o.y+=
+    speed*dt;
 
     o.x=
-      laneX(
-        o.lane,
-        o.y
-      );
+    laneX(
+      o.lane,
+      o.y
+    );
+
 
     let t=
-      (o.y-H*.28)/
-      (H-H*.28);
+    (o.y-H*.28)/
+    (H-H*.28);
 
-    if(o.type==="coin"){
+
+    if(
+      o.type==="coin"
+    ){
 
       o.size=
-        10+t*22;
+      10+t*22;
 
     }else{
 
       o.size=
-        14+t*32;
+      14+t*32;
     }
 
-    let playerY=H*.76;
+
+    let playerY=
+    H*.76;
+
 
     if(
-      Math.abs(o.y-playerY)<45 &&
+      Math.abs(
+        o.y-playerY
+      )<45 &&
       o.lane===playerLane
     ){
 
-      if(o.type==="coin"){
+      if(
+        o.type==="coin"
+      ){
 
         coinCount++;
+
         score+=10;
 
-        objects.splice(i,1);
+        objects.splice(
+          i,
+          1
+        );
 
         updateUI();
 
@@ -938,24 +1507,34 @@ function updateObjects(dt){
       }else{
 
         gameOver();
+
         return;
       }
     }
 
-    if(o.y>H+80){
 
-      objects.splice(i,1);
+    if(
+      o.y>H+80
+    ){
+
+      objects.splice(
+        i,
+        1
+      );
     }
   }
 }
 
+
 /* =========================
-MOVE PLAYER
+MOVE
 ========================= */
 
 function moveLeft(){
 
-  if(playerLane>0){
+  if(
+    playerLane>0
+  ){
 
     playerLane--;
 
@@ -963,9 +1542,12 @@ function moveLeft(){
   }
 }
 
+
 function moveRight(){
 
-  if(playerLane<2){
+  if(
+    playerLane<2
+  ){
 
     playerLane++;
 
@@ -973,47 +1555,128 @@ function moveRight(){
   }
 }
 
+
 function updatePlayerPosition(){
 
   targetX=
-    laneX(
-      playerLane,
-      H*.76
-    );
+  laneX(
+    playerLane,
+    H*.76
+  );
 }
 
+
 /* =========================
-TOUCH
+BUTTON CONTROLS
+========================= */
+
+const leftBtn=
+document.getElementById(
+  "leftBtn"
+);
+
+const rightBtn=
+document.getElementById(
+  "rightBtn"
+);
+
+
+/* LEFT BUTTON */
+
+leftBtn.addEventListener(
+  "touchstart",
+  function(e){
+
+    e.preventDefault();
+
+    moveLeft();
+
+  },
+  {passive:false}
+);
+
+
+leftBtn.addEventListener(
+  "mousedown",
+  function(e){
+
+    e.preventDefault();
+
+    moveLeft();
+
+  }
+);
+
+
+/* RIGHT BUTTON */
+
+rightBtn.addEventListener(
+  "touchstart",
+  function(e){
+
+    e.preventDefault();
+
+    moveRight();
+
+  },
+  {passive:false}
+);
+
+
+rightBtn.addEventListener(
+  "mousedown",
+  function(e){
+
+    e.preventDefault();
+
+    moveRight();
+
+  }
+);
+
+
+/* =========================
+SWIPE CONTROL
 ========================= */
 
 canvas.addEventListener(
   "touchstart",
   function(e){
 
-    let t=e.touches[0];
+    let t=
+    e.touches[0];
 
-    swipeStartX=t.clientX;
-    swipeStartY=t.clientY;
+    swipeStartX=
+    t.clientX;
+
+    swipeStartY=
+    t.clientY;
 
   },
   {passive:false}
 );
 
+
 canvas.addEventListener(
   "touchend",
   function(e){
 
-    let t=e.changedTouches[0];
+    let t=
+    e.changedTouches[0];
 
     let dx=
-      t.clientX-swipeStartX;
+    t.clientX-
+    swipeStartX;
 
     let dy=
-      t.clientY-swipeStartY;
+    t.clientY-
+    swipeStartY;
+
 
     if(
-      Math.abs(dx)>25 &&
-      Math.abs(dx)>Math.abs(dy)
+      Math.abs(dx)>20 &&
+      Math.abs(dx)>
+      Math.abs(dy)
     ){
 
       if(dx<0){
@@ -1025,9 +1688,11 @@ canvas.addEventListener(
         moveRight();
       }
     }
+
   },
   {passive:false}
 );
+
 
 /* =========================
 KEYBOARD
@@ -1037,15 +1702,22 @@ document.addEventListener(
   "keydown",
   function(e){
 
-    if(e.key==="ArrowLeft"){
+    if(
+      e.key==="ArrowLeft"
+    ){
+
       moveLeft();
     }
 
-    if(e.key==="ArrowRight"){
+    if(
+      e.key==="ArrowRight"
+    ){
+
       moveRight();
     }
   }
 );
+
 
 /* =========================
 UI
@@ -1053,14 +1725,20 @@ UI
 
 function updateUI(){
 
-  document.getElementById("score")
-  .textContent=
-  "Score: "+Math.floor(score);
+  document.getElementById(
+    "score"
+  ).textContent=
+  "Score: "+
+  Math.floor(score);
 
-  document.getElementById("coins")
-  .textContent=
-  "🪙 "+coinCount;
+
+  document.getElementById(
+    "coins"
+  ).textContent=
+  "🪙 "+
+  coinCount;
 }
+
 
 /* =========================
 GAME OVER
@@ -1070,13 +1748,17 @@ function gameOver(){
 
   running=false;
 
-  document.getElementById("finalScore")
-  .textContent=
-  "Score: "+Math.floor(score);
+  document.getElementById(
+    "finalScore"
+  ).textContent=
+  "Score: "+
+  Math.floor(score);
 
-  document.getElementById("gameOver")
-  .style.display="flex";
+  document.getElementById(
+    "gameOver"
+  ).style.display="flex";
 }
+
 
 /* =========================
 RESTART
@@ -1087,6 +1769,7 @@ function restartGame(){
   running=true;
 
   score=0;
+
   coinCount=0;
 
   speed=.20;
@@ -1097,22 +1780,30 @@ function restartGame(){
 
   spawnTimer=0;
 
+  trainX=-600;
+
+
   targetX=
-    laneX(
-      playerLane,
-      H*.76
-    );
+  laneX(
+    playerLane,
+    H*.76
+  );
 
-  playerX=targetX;
+  playerX=
+  targetX;
 
-  document.getElementById("gameOver")
-  .style.display="none";
+
+  document.getElementById(
+    "gameOver"
+  ).style.display="none";
+
 
   updateUI();
 
   lastTime=
-    performance.now();
+  performance.now();
 }
+
 
 /* =========================
 GAME LOOP
@@ -1121,66 +1812,72 @@ GAME LOOP
 function gameLoop(now){
 
   let dt=
-    now-lastTime;
+  now-lastTime;
 
   lastTime=now;
 
+
   if(dt>50){
+
     dt=50;
   }
 
+
   if(running){
 
-    roadOffset+=speed*dt;
+    roadOffset+=
+    speed*dt;
+
 
     spawnTimer+=dt;
 
-    if(spawnTimer>850){
+
+    if(
+      spawnTimer>850
+    ){
 
       spawnObject();
 
       spawnTimer=0;
     }
 
+
     updateObjects(dt);
 
-    /* speed very slowly increases */
+    updateTrain(dt);
 
-    speed+=
-      .000003*dt;
 
     score+=
-      .015*dt;
+    .015*dt;
+
 
     updateUI();
   }
 
+
   ctx.clearRect(
-    0,
-    0,
-    W,
-    H
+    0,0,W,H
   );
+
 
   drawBackground();
 
-  /* railway */
-
   drawRailway();
 
-  /* houses + people */
+  drawTrain();
 
-  drawSideScenery();
-
-  /* road */
+  drawVillage();
 
   drawRoad();
 
-  /* objects */
 
-  for(let o of objects){
+  for(
+    let o of objects
+  ){
 
-    if(o.type==="coin"){
+    if(
+      o.type==="coin"
+    ){
 
       drawCoin(o);
 
@@ -1190,28 +1887,34 @@ function gameLoop(now){
     }
   }
 
-  /* player */
 
   drawPlayer();
 
-  requestAnimationFrame(gameLoop);
+
+  requestAnimationFrame(
+    gameLoop
+  );
 }
+
 
 /* =========================
 START
 ========================= */
 
 targetX=
-  laneX(
-    playerLane,
-    H*.76
-  );
+laneX(
+  playerLane,
+  H*.76
+);
 
-playerX=targetX;
+playerX=
+targetX;
 
 updateUI();
 
-requestAnimationFrame(gameLoop);
+requestAnimationFrame(
+  gameLoop
+);
 
 </script>
 

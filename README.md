@@ -30,6 +30,9 @@ html,body{
 }
 
 canvas{
+  position:absolute;
+  left:0;
+  top:0;
   width:100%;
   height:100%;
   display:block;
@@ -43,7 +46,7 @@ canvas{
   font-size:22px;
   font-weight:bold;
   text-shadow:2px 2px 4px #000;
-  z-index:5;
+  z-index:10;
 }
 
 #coins{
@@ -54,7 +57,7 @@ canvas{
   font-size:20px;
   font-weight:bold;
   text-shadow:2px 2px 4px #000;
-  z-index:5;
+  z-index:10;
 }
 
 /* =========================
@@ -63,59 +66,85 @@ LEFT RIGHT BUTTONS
 
 #controls{
   position:absolute;
-  bottom:25px;
   left:0;
-  width:100%;
+  right:0;
+  bottom:22px;
+  height:90px;
   display:flex;
   justify-content:space-between;
+  align-items:center;
   padding:0 25px;
-  z-index:10;
-  pointer-events:none;
+  z-index:50;
 }
 
-.controlBtn{
-  width:75px;
-  height:75px;
+.controlButton{
+  width:78px;
+  height:78px;
+
   border-radius:50%;
-  border:3px solid rgba(255,255,255,.8);
-  background:rgba(0,0,0,.45);
+
+  border:3px solid white;
+
+  background:rgba(0,0,0,0.55);
+
   color:white;
+
   font-size:42px;
+
   font-weight:bold;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
+  box-shadow:
+    0 4px 12px rgba(0,0,0,.5);
+
   user-select:none;
-  pointer-events:auto;
-  box-shadow:0 4px 12px rgba(0,0,0,.4);
+  -webkit-user-select:none;
+
+  cursor:pointer;
 }
 
-.controlBtn:active{
-  transform:scale(.90);
+.controlButton:active{
+  transform:scale(.88);
   background:rgba(255,255,255,.35);
 }
 
 #hint{
   position:absolute;
-  bottom:108px;
+  bottom:120px;
   left:50%;
   transform:translateX(-50%);
+
   color:white;
-  opacity:.75;
+
   font-size:14px;
-  z-index:5;
+
+  opacity:.75;
+
+  z-index:10;
+
+  text-shadow:1px 1px 3px #000;
 }
 
 #gameOver{
   display:none;
+
   position:absolute;
+
   inset:0;
+
   background:rgba(0,0,0,.68);
+
   color:white;
+
   align-items:center;
   justify-content:center;
+
   flex-direction:column;
-  z-index:20;
+
+  z-index:100;
 }
 
 #gameOver h1{
@@ -128,13 +157,18 @@ LEFT RIGHT BUTTONS
   margin-bottom:22px;
 }
 
-button{
+.restartButton{
   border:0;
   border-radius:14px;
+
   padding:14px 30px;
+
   font-size:20px;
+
   font-weight:bold;
+
   background:#ffd52e;
+
   color:#111;
 }
 </style>
@@ -146,24 +180,33 @@ button{
 
 <canvas id="canvas"></canvas>
 
-<div id="score">Score: 0</div>
-<div id="coins">🪙 0</div>
+<div id="score">
+Score: 0
+</div>
 
-<div id="hint">Swipe or use buttons</div>
+<div id="coins">
+🪙 0
+</div>
+
+<div id="hint">
+LEFT / RIGHT BUTTON OR SWIPE
+</div>
 
 
-<!-- LEFT RIGHT BUTTONS -->
+<!-- =========================
+     LEFT RIGHT BUTTONS
+========================= -->
 
 <div id="controls">
 
   <div
-    class="controlBtn"
+    class="controlButton"
     id="leftBtn">
     ◀
   </div>
 
   <div
-    class="controlBtn"
+    class="controlButton"
     id="rightBtn">
     ▶
   </div>
@@ -173,15 +216,17 @@ button{
 
 <div id="gameOver">
 
-<h1>GAME OVER</h1>
+  <h1>GAME OVER</h1>
 
-<p id="finalScore">
-Score: 0
-</p>
+  <p id="finalScore">
+    Score: 0
+  </p>
 
-<button onclick="restartGame()">
-PLAY AGAIN
-</button>
+  <button
+    class="restartButton"
+    id="restartBtn">
+    PLAY AGAIN
+  </button>
 
 </div>
 
@@ -190,35 +235,66 @@ PLAY AGAIN
 
 <script>
 
-const canvas=
+const canvas =
 document.getElementById("canvas");
 
-const ctx=
+const ctx =
 canvas.getContext("2d");
 
-let W,H;
 
-let dpr=
+let W;
+let H;
+
+let dpr =
 Math.min(
-  window.devicePixelRatio||1,
+  window.devicePixelRatio || 1,
   2
 );
 
 
 function resize(){
 
-  W=window.innerWidth;
-  H=window.innerHeight;
+  W =
+  window.innerWidth;
 
-  canvas.width=W*dpr;
-  canvas.height=H*dpr;
+  H =
+  window.innerHeight;
 
-  canvas.style.width=W+"px";
-  canvas.style.height=H+"px";
+  canvas.width =
+  W * dpr;
+
+  canvas.height =
+  H * dpr;
+
+  canvas.style.width =
+  W + "px";
+
+  canvas.style.height =
+  H + "px";
 
   ctx.setTransform(
-    dpr,0,0,dpr,0,0
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
   );
+
+  trainY =
+  H * .40;
+
+  if(
+    typeof playerLane !== "undefined"
+  ){
+
+    targetX =
+    laneX(
+      playerLane,
+      H*.76
+    );
+
+  }
 }
 
 window.addEventListener(
@@ -226,90 +302,100 @@ window.addEventListener(
   resize
 );
 
-resize();
-
 
 /* =========================
 GAME VARIABLES
 ========================= */
 
-let running=true;
+let running = true;
 
-let score=0;
+let score = 0;
 
-let coinCount=0;
-
-let speed=.20;
-
-let roadOffset=0;
-
-let playerLane=1;
-
-let playerX=0;
-
-let targetX=0;
+let coinCount = 0;
 
 
-/* FAST PLAYER */
+/* ROAD SLOW */
 
-let playerMoveSpeed=.78;
+let speed = .20;
+
+let roadOffset = 0;
 
 
-let objects=[];
+/* PLAYER */
 
-let spawnTimer=0;
+let playerLane = 1;
 
-let lastTime=
+let playerX = 0;
+
+let targetX = 0;
+
+
+/* PLAYER FAST */
+
+let playerMoveSpeed = .78;
+
+
+let objects = [];
+
+let spawnTimer = 0;
+
+let lastTime =
 performance.now();
 
 
 /* SWIPE */
 
-let swipeStartX=0;
-let swipeStartY=0;
+let swipeStartX = 0;
+
+let swipeStartY = 0;
 
 
 /* TRAIN */
 
-let trainX=-600;
+let trainX = -600;
 
-let trainSpeed=.11;
+let trainSpeed = .11;
 
-let trainY=H*.40;
+let trainY = 200;
 
 
 /* =========================
-ROAD
+ROAD WIDTH
 ========================= */
 
 function roadWidth(y){
 
-  let horizon=H*.28;
+  let horizon =
+  H * .28;
 
-  let t=
-  (y-horizon)/
-  (H-horizon);
+  let t =
+  (y - horizon) /
+  (H - horizon);
 
-  t=
+  t =
   Math.max(
     0,
     Math.min(1,t)
   );
 
-  return 100+t*W*.92;
+  return 100 +
+  t * W * .92;
 }
 
 
 function laneX(lane,y){
 
-  let rw=
+  let rw =
   roadWidth(y);
 
-  let laneW=
-  rw/3;
+  let laneW =
+  rw / 3;
 
-  return W/2-rw/2+
-  laneW*(lane+.5);
+  return (
+    W/2 -
+    rw/2 +
+    laneW * (lane+.5)
+  );
 }
 
 
@@ -319,9 +405,12 @@ BACKGROUND
 
 function drawBackground(){
 
-  let sky=
+  let sky =
   ctx.createLinearGradient(
-    0,0,0,H*.55
+    0,
+    0,
+    0,
+    H*.55
   );
 
   sky.addColorStop(
@@ -339,10 +428,13 @@ function drawBackground(){
     "#b5e0d1"
   );
 
-  ctx.fillStyle=sky;
+  ctx.fillStyle = sky;
 
   ctx.fillRect(
-    0,0,W,H*.60
+    0,
+    0,
+    W,
+    H*.60
   );
 
 
@@ -358,65 +450,80 @@ function drawBackground(){
     Math.PI*2
   );
 
-  ctx.fillStyle="#ffe99a";
+  ctx.fillStyle =
+  "#ffe99a";
 
   ctx.fill();
 
 
   /* GROUND */
 
-  ctx.fillStyle="#62a94b";
+  ctx.fillStyle =
+  "#62a94b";
 
   ctx.fillRect(
-    0,H*.43,
-    W,H*.57
+    0,
+    H*.43,
+    W,
+    H*.57
   );
 
 
   /* MOUNTAINS */
 
-  ctx.fillStyle="#43835a";
+  ctx.fillStyle =
+  "#43835a";
 
   ctx.beginPath();
 
   ctx.moveTo(
-    0,H*.43
+    0,
+    H*.43
   );
 
   ctx.lineTo(
-    W*.12,H*.34
+    W*.12,
+    H*.34
   );
 
   ctx.lineTo(
-    W*.23,H*.42
+    W*.23,
+    H*.42
   );
 
   ctx.lineTo(
-    W*.38,H*.33
+    W*.38,
+    H*.33
   );
 
   ctx.lineTo(
-    W*.52,H*.42
+    W*.52,
+    H*.42
   );
 
   ctx.lineTo(
-    W*.70,H*.34
+    W*.70,
+    H*.34
   );
 
   ctx.lineTo(
-    W*.84,H*.42
+    W*.84,
+    H*.42
   );
 
   ctx.lineTo(
-    W,H*.34
+    W,
+    H*.34
   );
 
   ctx.lineTo(
-    W,H*.52
+    W,
+    H*.52
   );
 
   ctx.lineTo(
-    0,H*.52
+    0,
+    H*.52
   );
 
   ctx.closePath();
@@ -446,22 +553,36 @@ function drawTree(x,y,s){
 
   ctx.save();
 
-  ctx.translate(x,y);
-
-  ctx.scale(s,s);
-
-  ctx.fillStyle="#704321";
-
-  ctx.fillRect(
-    -7,0,14,70
+  ctx.translate(
+    x,
+    y
   );
 
-  ctx.fillStyle="#1b7137";
+  ctx.scale(
+    s,
+    s
+  );
+
+
+  ctx.fillStyle =
+  "#704321";
+
+  ctx.fillRect(
+    -7,
+    0,
+    14,
+    70
+  );
+
+
+  ctx.fillStyle =
+  "#1b7137";
 
   ctx.beginPath();
 
   ctx.arc(
-    0,-5,
+    0,
+    -5,
     34,
     0,
     Math.PI*2
@@ -469,10 +590,12 @@ function drawTree(x,y,s){
 
   ctx.fill();
 
+
   ctx.beginPath();
 
   ctx.arc(
-    -27,15,
+    -27,
+    15,
     25,
     0,
     Math.PI*2
@@ -480,10 +603,12 @@ function drawTree(x,y,s){
 
   ctx.fill();
 
+
   ctx.beginPath();
 
   ctx.arc(
-    27,15,
+    27,
+    15,
     25,
     0,
     Math.PI*2
@@ -503,20 +628,30 @@ function drawHouse(x,y,s){
 
   ctx.save();
 
-  ctx.translate(x,y);
+  ctx.translate(
+    x,
+    y
+  );
 
-  ctx.scale(s,s);
+  ctx.scale(
+    s,
+    s
+  );
 
 
-  ctx.fillStyle=
+  ctx.fillStyle =
   "rgba(0,0,0,.18)";
 
   ctx.beginPath();
 
   ctx.ellipse(
-    0,58,
-    55,10,
-    0,0,Math.PI*2
+    0,
+    58,
+    55,
+    10,
+    0,
+    0,
+    Math.PI*2
   );
 
   ctx.fill();
@@ -524,25 +659,38 @@ function drawHouse(x,y,s){
 
   /* WALL */
 
-  ctx.fillStyle="#f0c27b";
+  ctx.fillStyle =
+  "#f0c27b";
 
   ctx.fillRect(
-    -43,0,
-    86,55
+    -43,
+    0,
+    86,
+    55
   );
 
 
   /* ROOF */
 
-  ctx.fillStyle="#9e3c27";
+  ctx.fillStyle =
+  "#9e3c27";
 
   ctx.beginPath();
 
-  ctx.moveTo(-54,0);
+  ctx.moveTo(
+    -54,
+    0
+  );
 
-  ctx.lineTo(0,-43);
+  ctx.lineTo(
+    0,
+    -43
+  );
 
-  ctx.lineTo(54,0);
+  ctx.lineTo(
+    54,
+    0
+  );
 
   ctx.closePath();
 
@@ -551,28 +699,35 @@ function drawHouse(x,y,s){
 
   /* DOOR */
 
-  ctx.fillStyle="#70401f";
+  ctx.fillStyle =
+  "#70401f";
 
   ctx.fillRect(
-    -10,25,
-    20,30
+    -10,
+    25,
+    20,
+    30
   );
 
 
   /* WINDOWS */
 
-  ctx.fillStyle="#75d1e8";
+  ctx.fillStyle =
+  "#75d1e8";
 
   ctx.fillRect(
-    -34,15,
-    18,16
+    -34,
+    15,
+    18,
+    16
   );
 
   ctx.fillRect(
-    16,15,
-    18,16
+    16,
+    15,
+    18,
+    16
   );
-
 
   ctx.restore();
 }
@@ -583,27 +738,41 @@ PEOPLE
 ========================= */
 
 function drawPerson(
-  x,y,s,shirt,skin
+  x,
+  y,
+  s,
+  shirt,
+  skin
 ){
 
   ctx.save();
 
-  ctx.translate(x,y);
+  ctx.translate(
+    x,
+    y
+  );
 
-  ctx.scale(s,s);
+  ctx.scale(
+    s,
+    s
+  );
 
 
   /* SHADOW */
 
-  ctx.fillStyle=
+  ctx.fillStyle =
   "rgba(0,0,0,.25)";
 
   ctx.beginPath();
 
   ctx.ellipse(
-    0,25,
-    13,5,
-    0,0,Math.PI*2
+    0,
+    25,
+    13,
+    5,
+    0,
+    0,
+    Math.PI*2
   );
 
   ctx.fill();
@@ -611,12 +780,14 @@ function drawPerson(
 
   /* HEAD */
 
-  ctx.fillStyle=skin;
+  ctx.fillStyle =
+  skin;
 
   ctx.beginPath();
 
   ctx.arc(
-    0,-25,
+    0,
+    -25,
     10,
     0,
     Math.PI*2
@@ -627,12 +798,14 @@ function drawPerson(
 
   /* HAIR */
 
-  ctx.fillStyle="#211810";
+  ctx.fillStyle =
+  "#211810";
 
   ctx.beginPath();
 
   ctx.arc(
-    0,-30,
+    0,
+    -30,
     10,
     Math.PI,
     Math.PI*2
@@ -643,13 +816,16 @@ function drawPerson(
 
   /* BODY */
 
-  ctx.fillStyle=shirt;
+  ctx.fillStyle =
+  shirt;
 
   ctx.beginPath();
 
   ctx.roundRect(
-    -10,-14,
-    20,30,
+    -10,
+    -14,
+    20,
+    30,
     5
   );
 
@@ -658,38 +834,64 @@ function drawPerson(
 
   /* ARMS */
 
-  ctx.strokeStyle=skin;
+  ctx.strokeStyle =
+  skin;
 
-  ctx.lineWidth=6;
+  ctx.lineWidth = 6;
 
   ctx.beginPath();
 
-  ctx.moveTo(-8,-7);
+  ctx.moveTo(
+    -8,
+    -7
+  );
 
-  ctx.lineTo(-19,8);
+  ctx.lineTo(
+    -19,
+    8
+  );
 
-  ctx.moveTo(8,-7);
+  ctx.moveTo(
+    8,
+    -7
+  );
 
-  ctx.lineTo(19,8);
+  ctx.lineTo(
+    19,
+    8
+  );
 
   ctx.stroke();
 
 
   /* LEGS */
 
-  ctx.strokeStyle="#222";
+  ctx.strokeStyle =
+  "#222";
 
-  ctx.lineWidth=7;
+  ctx.lineWidth = 7;
 
   ctx.beginPath();
 
-  ctx.moveTo(-4,14);
+  ctx.moveTo(
+    -4,
+    14
+  );
 
-  ctx.lineTo(-10,31);
+  ctx.lineTo(
+    -10,
+    31
+  );
 
-  ctx.moveTo(4,14);
+  ctx.moveTo(
+    4,
+    14
+  );
 
-  ctx.lineTo(10,31);
+  ctx.lineTo(
+    10,
+    31
+  );
 
   ctx.stroke();
 
@@ -728,6 +930,8 @@ function drawVillage(){
     .62
   );
 
+
+  /* PEOPLE */
 
   drawPerson(
     W*.27,
@@ -782,16 +986,20 @@ RAILWAY
 
 function drawRailway(){
 
-  let horizon=H*.31;
+  let horizon =
+  H*.31;
 
-  let rail1=W*.045;
+  let rail1 =
+  W*.045;
 
-  let rail2=W*.105;
+  let rail2 =
+  W*.105;
 
 
-  ctx.strokeStyle="#bcbcbc";
+  ctx.strokeStyle =
+  "#bcbcbc";
 
-  ctx.lineWidth=4;
+  ctx.lineWidth = 4;
 
   ctx.beginPath();
 
@@ -824,19 +1032,20 @@ function drawRailway(){
     y+=30
   ){
 
-    let t=
+    let t =
     (y-horizon)/
     (H-horizon);
 
-    let x1=
+    let x1 =
     rail1-t*15;
 
-    let x2=
+    let x2 =
     rail2+t*20;
 
-    ctx.strokeStyle="#65442d";
+    ctx.strokeStyle =
+    "#65442d";
 
-    ctx.lineWidth=
+    ctx.lineWidth =
     4+t*8;
 
     ctx.beginPath();
@@ -862,14 +1071,15 @@ TRAIN
 
 function drawTrain(){
 
-  let y=trainY;
+  let y =
+  trainY;
 
-  let engineW=170;
+  let engineW = 170;
 
-  let coachW=75;
+  let coachW = 75;
 
 
-  ctx.fillStyle=
+  ctx.fillStyle =
   "rgba(0,0,0,.25)";
 
   ctx.fillRect(
@@ -882,7 +1092,8 @@ function drawTrain(){
 
   /* ENGINE */
 
-  ctx.fillStyle="#d53a32";
+  ctx.fillStyle =
+  "#d53a32";
 
   ctx.fillRect(
     trainX,
@@ -894,7 +1105,8 @@ function drawTrain(){
 
   /* CABIN */
 
-  ctx.fillStyle="#b92e2b";
+  ctx.fillStyle =
+  "#b92e2b";
 
   ctx.fillRect(
     trainX+25,
@@ -906,18 +1118,21 @@ function drawTrain(){
 
   /* WINDOWS */
 
-  ctx.fillStyle="#9de0ec";
+  ctx.fillStyle =
+  "#9de0ec";
 
   ctx.fillRect(
     trainX+35,
     y-18,
-    17,14
+    17,
+    14
   );
 
   ctx.fillRect(
     trainX+58,
     y-18,
-    17,14
+    17,
+    14
   );
 
 
@@ -929,15 +1144,17 @@ function drawTrain(){
     i++
   ){
 
-    let bx=
+    let bx =
     trainX+
     engineW+
     i*coachW;
 
-    ctx.fillStyle=
+
+    ctx.fillStyle =
     i%2===0
-    ?"#e0b52e"
-    :"#d79d25";
+    ? "#e0b52e"
+    : "#d79d25";
+
 
     ctx.fillRect(
       bx,
@@ -947,7 +1164,9 @@ function drawTrain(){
     );
 
 
-    ctx.fillStyle="#75c9df";
+    ctx.fillStyle =
+    "#75c9df";
+
 
     for(
       let w=0;
@@ -958,7 +1177,8 @@ function drawTrain(){
       ctx.fillRect(
         bx+10+w*27,
         y+12,
-        18,14
+        18,
+        14
       );
     }
   }
@@ -966,7 +1186,8 @@ function drawTrain(){
 
   /* WHEELS */
 
-  ctx.fillStyle="#202020";
+  ctx.fillStyle =
+  "#202020";
 
   for(
     let i=0;
@@ -974,7 +1195,7 @@ function drawTrain(){
     i++
   ){
 
-    let wx=
+    let wx =
     trainX+
     15+
     i*40;
@@ -996,17 +1217,17 @@ function drawTrain(){
 
 function updateTrain(dt){
 
-  trainX+=
+  trainX +=
   trainSpeed*dt;
 
-  let trainWidth=
+  let trainWidth =
   170+75*3;
 
   if(
     trainX>W+100
   ){
 
-    trainX=
+    trainX =
     -trainWidth-100;
   }
 }
@@ -1018,12 +1239,15 @@ ROAD
 
 function drawRoad(){
 
-  let horizon=H*.28;
+  let horizon =
+  H*.28;
 
-  let bottomWidth=W*1.05;
+  let bottomWidth =
+  W*1.05;
 
 
-  ctx.fillStyle="#293238";
+  ctx.fillStyle =
+  "#293238";
 
   ctx.beginPath();
 
@@ -1052,11 +1276,12 @@ function drawRoad(){
   ctx.fill();
 
 
-  /* EDGES */
+  /* ROAD EDGES */
 
-  ctx.strokeStyle="#eeeeee";
+  ctx.strokeStyle =
+  "#eeeeee";
 
-  ctx.lineWidth=5;
+  ctx.lineWidth = 5;
 
   ctx.beginPath();
 
@@ -1085,10 +1310,10 @@ function drawRoad(){
 
   /* LANE MARKINGS */
 
-  let dash=55;
+  let dash = 55;
 
   for(
-    let y=
+    let y =
     horizon+
     (roadOffset%dash)-
     dash;
@@ -1098,17 +1323,19 @@ function drawRoad(){
     y+=dash
   ){
 
-    let t=
+    let t =
     (y-horizon)/
     (H-horizon);
 
-    let rw=
+    let rw =
     roadWidth(y);
 
-    let laneW=
+    let laneW =
     rw/3;
 
-    ctx.fillStyle="#eeeeee";
+    ctx.fillStyle =
+    "#eeeeee";
+
 
     for(
       let i=1;
@@ -1116,11 +1343,11 @@ function drawRoad(){
       i++
     ){
 
-      let x=
+      let x =
       W/2-rw/2+
       laneW*i;
 
-      let markH=
+      let markH =
       18+t*30;
 
       ctx.fillRect(
@@ -1135,12 +1362,13 @@ function drawRoad(){
 
 
 /* =========================
-PLAYER
+PLAYER CAR
 ========================= */
 
 function drawPlayer(){
 
-  let y=H*.76;
+  let y =
+  H*.76;
 
 
   /* FAST MOVEMENT */
@@ -1160,29 +1388,36 @@ function drawPlayer(){
 
   /* SHADOW */
 
-  ctx.fillStyle=
+  ctx.fillStyle =
   "rgba(0,0,0,.35)";
 
   ctx.beginPath();
 
   ctx.ellipse(
-    0,48,
-    34,10,
-    0,0,Math.PI*2
+    0,
+    48,
+    34,
+    10,
+    0,
+    0,
+    Math.PI*2
   );
 
   ctx.fill();
 
 
-  /* CAR */
+  /* CAR BODY */
 
-  ctx.fillStyle="#e52e35";
+  ctx.fillStyle =
+  "#e52e35";
 
   ctx.beginPath();
 
   ctx.roundRect(
-    -25,-45,
-    50,90,
+    -25,
+    -45,
+    50,
+    90,
     10
   );
 
@@ -1191,13 +1426,16 @@ function drawPlayer(){
 
   /* ROOF */
 
-  ctx.fillStyle="#172b3d";
+  ctx.fillStyle =
+  "#172b3d";
 
   ctx.beginPath();
 
   ctx.roundRect(
-    -17,-30,
-    34,35,
+    -17,
+    -30,
+    34,
+    35,
     7
   );
 
@@ -1206,17 +1444,30 @@ function drawPlayer(){
 
   /* GLASS */
 
-  ctx.fillStyle="#65b8d1";
+  ctx.fillStyle =
+  "#65b8d1";
 
   ctx.beginPath();
 
-  ctx.moveTo(-14,-25);
+  ctx.moveTo(
+    -14,
+    -25
+  );
 
-  ctx.lineTo(14,-25);
+  ctx.lineTo(
+    14,
+    -25
+  );
 
-  ctx.lineTo(13,-8);
+  ctx.lineTo(
+    13,
+    -8
+  );
 
-  ctx.lineTo(-13,-8);
+  ctx.lineTo(
+    -13,
+    -8
+  );
 
   ctx.closePath();
 
@@ -1225,56 +1476,75 @@ function drawPlayer(){
 
   /* LIGHTS */
 
-  ctx.fillStyle="#fff4a3";
+  ctx.fillStyle =
+  "#fff4a3";
 
   ctx.fillRect(
-    -21,-39,
-    9,7
+    -21,
+    -39,
+    9,
+    7
   );
 
   ctx.fillRect(
-    12,-39,
-    9,7
+    12,
+    -39,
+    9,
+    7
   );
 
 
-  /* BACK LIGHT */
+  /* BACK LIGHTS */
 
-  ctx.fillStyle="#ff2525";
+  ctx.fillStyle =
+  "#ff2525";
 
   ctx.fillRect(
-    -21,32,
-    9,7
+    -21,
+    32,
+    9,
+    7
   );
 
   ctx.fillRect(
-    12,32,
-    9,7
+    12,
+    32,
+    9,
+    7
   );
 
 
   /* WHEELS */
 
-  ctx.fillStyle="#111";
+  ctx.fillStyle =
+  "#111";
 
   ctx.fillRect(
-    -29,-28,
-    7,22
+    -29,
+    -28,
+    7,
+    22
   );
 
   ctx.fillRect(
-    22,-28,
-    7,22
+    22,
+    -28,
+    7,
+    22
   );
 
   ctx.fillRect(
-    -29,18,
-    7,22
+    -29,
+    18,
+    7,
+    22
   );
 
   ctx.fillRect(
-    22,18,
-    7,22
+    22,
+    18,
+    7,
+    22
   );
 
   ctx.restore();
@@ -1282,7 +1552,7 @@ function drawPlayer(){
 
 
 /* =========================
-ENEMY
+ENEMY CAR
 ========================= */
 
 function drawObstacle(o){
@@ -1298,7 +1568,8 @@ function drawObstacle(o){
     y
   );
 
-  ctx.fillStyle="#2468d8";
+  ctx.fillStyle =
+  "#2468d8";
 
   ctx.beginPath();
 
@@ -1313,7 +1584,8 @@ function drawObstacle(o){
   ctx.fill();
 
 
-  ctx.fillStyle="#172b3d";
+  ctx.fillStyle =
+  "#172b3d";
 
   ctx.fillRect(
     -s*.45,
@@ -1323,7 +1595,8 @@ function drawObstacle(o){
   );
 
 
-  ctx.fillStyle="#ffe889";
+  ctx.fillStyle =
+  "#ffe889";
 
   ctx.fillRect(
     -s*.58,
@@ -1356,6 +1629,7 @@ function drawCoin(o){
     o.y
   );
 
+
   ctx.beginPath();
 
   ctx.arc(
@@ -1366,26 +1640,35 @@ function drawCoin(o){
     Math.PI*2
   );
 
-  ctx.fillStyle="#ffd42a";
+  ctx.fillStyle =
+  "#ffd42a";
 
   ctx.fill();
 
-  ctx.strokeStyle="#fff09b";
 
-  ctx.lineWidth=3;
+  ctx.strokeStyle =
+  "#fff09b";
+
+  ctx.lineWidth = 3;
 
   ctx.stroke();
 
 
-  ctx.fillStyle="#9a6a00";
+  ctx.fillStyle =
+  "#9a6a00";
 
-  ctx.font=
-  Math.max(10,o.size)+
+  ctx.font =
+  Math.max(
+    10,
+    o.size
+  )+
   "px Arial";
 
-  ctx.textAlign="center";
+  ctx.textAlign =
+  "center";
 
-  ctx.textBaseline="middle";
+  ctx.textBaseline =
+  "middle";
 
   ctx.fillText(
     "₹",
@@ -1398,20 +1681,21 @@ function drawCoin(o){
 
 
 /* =========================
-SPAWN
+SPAWN OBJECT
 ========================= */
 
 function spawnObject(){
 
-  let lane=
+  let lane =
   Math.floor(
     Math.random()*3
   );
 
-  let type=
+
+  let type =
   Math.random()<.28
-  ?"coin"
-  :"car";
+  ? "coin"
+  : "car";
 
 
   objects.push({
@@ -1428,6 +1712,7 @@ function spawnObject(){
     type:type,
 
     size:20
+
   });
 }
 
@@ -1444,20 +1729,22 @@ function updateObjects(dt){
     i--
   ){
 
-    let o=
+    let o =
     objects[i];
 
-    o.y+=
+
+    o.y +=
     speed*dt;
 
-    o.x=
+
+    o.x =
     laneX(
       o.lane,
       o.y
     );
 
 
-    let t=
+    let t =
     (o.y-H*.28)/
     (H-H*.28);
 
@@ -1466,17 +1753,17 @@ function updateObjects(dt){
       o.type==="coin"
     ){
 
-      o.size=
+      o.size =
       10+t*22;
 
     }else{
 
-      o.size=
+      o.size =
       14+t*32;
     }
 
 
-    let playerY=
+    let playerY =
     H*.76;
 
 
@@ -1527,7 +1814,7 @@ function updateObjects(dt){
 
 
 /* =========================
-MOVE
+MOVE LEFT
 ========================= */
 
 function moveLeft(){
@@ -1542,6 +1829,10 @@ function moveLeft(){
   }
 }
 
+
+/* =========================
+MOVE RIGHT
+========================= */
 
 function moveRight(){
 
@@ -1558,7 +1849,7 @@ function moveRight(){
 
 function updatePlayerPosition(){
 
-  targetX=
+  targetX =
   laneX(
     playerLane,
     H*.76
@@ -1567,37 +1858,24 @@ function updatePlayerPosition(){
 
 
 /* =========================
-BUTTON CONTROLS
+BUTTON EVENTS
 ========================= */
 
-const leftBtn=
+const leftBtn =
 document.getElementById(
   "leftBtn"
 );
 
-const rightBtn=
+const rightBtn =
 document.getElementById(
   "rightBtn"
 );
 
 
-/* LEFT BUTTON */
+/* LEFT */
 
 leftBtn.addEventListener(
-  "touchstart",
-  function(e){
-
-    e.preventDefault();
-
-    moveLeft();
-
-  },
-  {passive:false}
-);
-
-
-leftBtn.addEventListener(
-  "mousedown",
+  "pointerdown",
   function(e){
 
     e.preventDefault();
@@ -1608,23 +1886,10 @@ leftBtn.addEventListener(
 );
 
 
-/* RIGHT BUTTON */
+/* RIGHT */
 
 rightBtn.addEventListener(
-  "touchstart",
-  function(e){
-
-    e.preventDefault();
-
-    moveRight();
-
-  },
-  {passive:false}
-);
-
-
-rightBtn.addEventListener(
-  "mousedown",
+  "pointerdown",
   function(e){
 
     e.preventDefault();
@@ -1636,20 +1901,20 @@ rightBtn.addEventListener(
 
 
 /* =========================
-SWIPE CONTROL
+SWIPE
 ========================= */
 
 canvas.addEventListener(
   "touchstart",
   function(e){
 
-    let t=
+    let t =
     e.touches[0];
 
-    swipeStartX=
+    swipeStartX =
     t.clientX;
 
-    swipeStartY=
+    swipeStartY =
     t.clientY;
 
   },
@@ -1661,14 +1926,14 @@ canvas.addEventListener(
   "touchend",
   function(e){
 
-    let t=
+    let t =
     e.changedTouches[0];
 
-    let dx=
+    let dx =
     t.clientX-
     swipeStartX;
 
-    let dy=
+    let dy =
     t.clientY-
     swipeStartY;
 
@@ -1679,7 +1944,9 @@ canvas.addEventListener(
       Math.abs(dy)
     ){
 
-      if(dx<0){
+      if(
+        dx<0
+      ){
 
         moveLeft();
 
@@ -1709,12 +1976,14 @@ document.addEventListener(
       moveLeft();
     }
 
+
     if(
       e.key==="ArrowRight"
     ){
 
       moveRight();
     }
+
   }
 );
 
@@ -1727,14 +1996,14 @@ function updateUI(){
 
   document.getElementById(
     "score"
-  ).textContent=
+  ).textContent =
   "Score: "+
   Math.floor(score);
 
 
   document.getElementById(
     "coins"
-  ).textContent=
+  ).textContent =
   "🪙 "+
   coinCount;
 }
@@ -1750,13 +2019,15 @@ function gameOver(){
 
   document.getElementById(
     "finalScore"
-  ).textContent=
+  ).textContent =
   "Score: "+
   Math.floor(score);
 
+
   document.getElementById(
     "gameOver"
-  ).style.display="flex";
+  ).style.display =
+  "flex";
 }
 
 
@@ -1783,41 +2054,71 @@ function restartGame(){
   trainX=-600;
 
 
-  targetX=
+  targetX =
   laneX(
     playerLane,
     H*.76
   );
 
-  playerX=
+  playerX =
   targetX;
 
 
   document.getElementById(
     "gameOver"
-  ).style.display="none";
+  ).style.display =
+  "none";
 
 
   updateUI();
 
-  lastTime=
+  lastTime =
   performance.now();
 }
 
 
+/* RESTART BUTTON */
+
+document.getElementById(
+  "restartBtn"
+).addEventListener(
+  "click",
+  restartGame
+);
+
+
 /* =========================
-GAME LOOP
+START
 ========================= */
+
+resize();
+
+
+targetX =
+laneX(
+  playerLane,
+  H*.76
+);
+
+playerX =
+targetX;
+
+
+updateUI();
+
 
 function gameLoop(now){
 
-  let dt=
+  let dt =
   now-lastTime;
 
-  lastTime=now;
+  lastTime =
+  now;
 
 
-  if(dt>50){
+  if(
+    dt>50
+  ){
 
     dt=50;
   }
@@ -1825,11 +2126,12 @@ function gameLoop(now){
 
   if(running){
 
-    roadOffset+=
+    roadOffset +=
     speed*dt;
 
 
-    spawnTimer+=dt;
+    spawnTimer +=
+    dt;
 
 
     if(
@@ -1847,7 +2149,7 @@ function gameLoop(now){
     updateTrain(dt);
 
 
-    score+=
+    score +=
     .015*dt;
 
 
@@ -1856,7 +2158,10 @@ function gameLoop(now){
 
 
   ctx.clearRect(
-    0,0,W,H
+    0,
+    0,
+    W,
+    H
   );
 
 
@@ -1896,21 +2201,6 @@ function gameLoop(now){
   );
 }
 
-
-/* =========================
-START
-========================= */
-
-targetX=
-laneX(
-  playerLane,
-  H*.76
-);
-
-playerX=
-targetX;
-
-updateUI();
 
 requestAnimationFrame(
   gameLoop

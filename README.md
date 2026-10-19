@@ -1,406 +1,220 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Highway Racer 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Netaji vs CID - Comedy Run</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;font-family:Arial,sans-serif;touch-action:none}
-canvas{display:block;width:100vw;height:100dvh}
-#hud{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;color:white;font-weight:800;text-shadow:0 2px 5px #000;pointer-events:none}
-.pill{background:#07131dcc;border:1px solid #ffffff55;border-radius:12px;padding:9px 12px;font-size:14px}
-#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#06101ab8;color:white;text-align:center;padding:22px}
-.panel{width:min(440px,100%);background:linear-gradient(145deg,#142a3c,#08121d);border:1px solid #52eaff88;border-radius:22px;padding:24px 20px;box-shadow:0 0 30px #00d9ff30}
-h1{font-size:34px;margin:0 0 8px;color:#62efff;text-transform:uppercase}
-p{line-height:1.5;color:#d7e5ee}
-button{border:0;border-radius:14px;padding:14px 20px;font-size:17px;font-weight:800;color:#06131c;background:linear-gradient(90deg,#67f4ff,#65ffa6);cursor:pointer}
-.small{font-size:12px;color:#a9c1d0}
-#controls{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;padding:0 20px;pointer-events:none}
-.ctrl{pointer-events:auto;width:76px;height:66px;border-radius:18px;background:#07131dcc;color:white;border:2px solid #ffffff80;font-size:27px;display:grid;place-items:center;user-select:none}
-#rightControls{display:flex;gap:12px}
-@media(min-width:800px){.ctrl{width:90px;height:72px}}
+body{margin:0;background:#78d5ff;font-family:Arial,sans-serif;text-align:center;color:#172033}
+h2{margin:12px 0}
+#info{font-weight:bold;padding:8px}
+#game{display:block;width:100%;max-width:800px;height:65vh;min-height:350px;margin:auto;background:#a9e6ff;border:3px solid #fff}
+button{font-size:18px;font-weight:bold;border:0;border-radius:12px;padding:14px;margin:7px;background:#ffca28;color:#222}
+#msg{font-weight:bold;background:white;padding:12px;margin:10px auto;max-width:800px;border-radius:12px}
 </style>
 </head>
 <body>
+<h2>🏃 Netaji vs CID 🚔</h2>
+<div id="info">Score: <span id="score">0</span> | Best: <span id="best">0</span></div>
 <canvas id="game"></canvas>
-
-<div id="hud">
-  <div class="pill">🏁 SCORE <span id="score">0</span></div>
-  <div class="pill">⚡ <span id="speed">0</span> km/h</div>
-  <div class="pill">🪙 <span id="coins">0</span></div>
+<div id="msg">CID: Pakdo ise! Iski speed se toh hamari jeep bhi sharma gayi!</div>
+<div>
+<button onclick="jump()">⬆️ JUMP</button>
+<button onclick="duck()">⬇️ DUCK</button>
+<button onclick="pauseGame()">⏸️ PAUSE</button>
 </div>
-
-<div id="controls">
-  <button class="ctrl" id="left">◀</button>
-  <div id="rightControls">
-    <button class="ctrl" id="brake">▼</button>
-    <button class="ctrl" id="right">▶</button>
-  </div>
-</div>
-
-<div id="overlay">
-  <div class="panel">
-    <h1>Highway Racer</h1>
-    <p>Avoid traffic, collect coins and survive as long as you can.</p>
-    <p>Use ◀ ▶ buttons or tap the left/right side of the screen to steer.</p>
-    <button id="start">START RACING</button>
-    <p class="small">Mobile-friendly single-file game</p>
-  </div>
-</div>
-
+<button id="start" onclick="startGame()">🎮 GAME START</button>
+<p>Mobile par buttons dabao. Computer par Space se jump aur ↓ se duck karo.</p>
+<p><small>Yeh ek kalpanik comedy/parody game hai.</small></p>
 <script>
-(()=>{
-const canvas=document.getElementById('game');
-const ctx=canvas.getContext('2d');
+const c=document.getElementById("game");
+const ctx=c.getContext("2d");
+const scoreBox=document.getElementById("score");
+const bestBox=document.getElementById("best");
+const msg=document.getElementById("msg");
+const startBtn=document.getElementById("start");
 
-const scoreEl=document.getElementById('score');
-const speedEl=document.getElementById('speed');
-const coinsEl=document.getElementById('coins');
-
-let W=0,H=0,dpr=1;
-let running=false,last=0,elapsed=0;
-let score=0,coins=0,speed=.48;
-let playerX=0,steer=0,brake=false;
-let traffic=[],pickups=[],spawn=0,coinSpawn=0,roadOffset=0;
-
-const colors=['#ff4757','#ffbd2e','#29a8ff','#a66bff','#f4f7fb','#36d399'];
+let W=800,H=450,ground=380;
+let player,obstacles,score,best,speed,active,paused,ducking;
+let last=0,spawn=0,frame=0;
+let lines=[
+'😂 CID: Pakdo ise! Iski speed se toh hamari jeep bhi sharma gayi!',
+'🚔 CID: Sahab, bhaagna band! Sawalon ka jawab dekar jaana!',
+'🤣 CID: Aapki speed se toh hamari jeep bhi sharma gayi!',
+'🕵️ CID: Game abhi khatam nahi hua, poochtaach baaki hai!',
+'😎 CID: Ruk jaiye sahab, CID peeche lagi hai!'
+];
+try{best=Number(localStorage.getItem("cidBest")||0)}catch(e){best=0}
+bestBox.textContent=best;
 
 function resize(){
-  dpr=Math.min(devicePixelRatio||1,2);
-  W=innerWidth;
-  H=innerHeight;
-  canvas.width=Math.floor(W*dpr);
-  canvas.height=Math.floor(H*dpr);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+ const r=c.getBoundingClientRect();
+ W=Math.max(300,r.width);
+ H=Math.max(350,r.height);
+ c.width=W*devicePixelRatio;
+ c.height=H*devicePixelRatio;
+ ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+ ground=H-55;
+ if(player && player.onGround)player.y=ground-player.h;
+ draw();
 }
-addEventListener('resize',resize);
-resize();
-
-function roadAt(y){
-  let t=(y-H*.22)/(H*.82);
-  t=Math.max(0,Math.min(1,t));
-  return {
-    w:W*(.12+.78*t),
-    cx:W*.5+Math.sin(elapsed*.12+t*2)*W*.025*t,
-    t
-  };
-}
-
-function poly(points,color){
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  ctx.moveTo(points[0][0],points[0][1]);
-  for(let i=1;i<points.length;i++)ctx.lineTo(points[i][0],points[i][1]);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawCar(x,y,w,h,color,player=false){
-  ctx.fillStyle='#0008';
-  ctx.beginPath();
-  ctx.ellipse(x,y+h*.42,w*.62,h*.14,0,0,Math.PI*2);
-  ctx.fill();
-
-  poly([
-    [x-w*.48,y+h*.35],
-    [x-w*.42,y-h*.25],
-    [x-w*.26,y-h*.48],
-    [x+w*.26,y-h*.48],
-    [x+w*.42,y-h*.25],
-    [x+w*.48,y+h*.35]
-  ],color);
-
-  poly([
-    [x-w*.29,y-h*.22],
-    [x-w*.19,y-h*.42],
-    [x+w*.19,y-h*.42],
-    [x+w*.29,y-h*.22]
-  ],'#a9e8ff');
-
-  poly([
-    [x-w*.34,y+h*.02],
-    [x+w*.34,y+h*.02],
-    [x+w*.39,y+h*.25],
-    [x-w*.39,y+h*.25]
-  ],player?'#142c42':'#263746');
-
-  ctx.fillStyle='#12151b';
-  ctx.fillRect(x-w*.53,y-h*.05,w*.12,h*.32);
-  ctx.fillRect(x+w*.41,y-h*.05,w*.12,h*.32);
-
-  ctx.fillStyle=player?'#dfffff':'#ffedaa';
-  ctx.fillRect(x-w*.36,y+h*.23,w*.17,h*.055);
-  ctx.fillRect(x+w*.19,y+h*.23,w*.17,h*.055);
-
-  if(player){
-    ctx.fillStyle='#00eaff';
-    ctx.fillRect(x-w*.035,y-h*.05,w*.07,h*.26);
-  }
-}
-
-function drawCoin(x,y,r){
-  ctx.fillStyle='#ffb800';
-  ctx.beginPath();
-  ctx.arc(x,y,r,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.strokeStyle='#fff2a6';
-  ctx.lineWidth=Math.max(1,r*.18);
-  ctx.stroke();
-
-  ctx.fillStyle='#fff3ae';
-  ctx.font=`bold ${r*1.25}px Arial`;
-  ctx.textAlign='center';
-  ctx.textBaseline='middle';
-  ctx.fillText('$',x,y+1);
-}
-
-function background(){
-  const g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#6cc9ed');
-  g.addColorStop(.46,'#d5f2ee');
-  g.addColorStop(.47,'#397e38');
-  g.addColorStop(1,'#174f28');
-  ctx.fillStyle=g;
-  ctx.fillRect(0,0,W,H);
-
-  poly([
-    [0,H*.42],[W*.12,H*.29],[W*.25,H*.39],
-    [W*.43,H*.25],[W*.58,H*.38],[W*.78,H*.28],
-    [W,H*.4],[W,H*.55],[0,H*.55]
-  ],'#589b68');
-
-  for(let side of [-1,1]){
-    for(let i=0;i<13;i++){
-      const y=((i/13*H*.9+roadOffset*H*.35)%(H*.88))+H*.08;
-      const t=Math.max(.1,(y-H*.2)/(H*.8));
-      const r=7+t*20;
-      const road=roadAt(y);
-      const x=road.cx+side*(road.w*.58+r*1.2);
-
-      ctx.fillStyle='#69452b';
-      ctx.fillRect(x-r*.13,y-r*.05,r*.26,r*.7);
-
-      ctx.fillStyle=i%2?'#146b37':'#1b843e';
-      ctx.beginPath();
-      ctx.arc(x,y-r*.35,r*.62,0,Math.PI*2);
-      ctx.fill();
-    }
-  }
-}
-
-function drawRoad(){
-  const top=H*.2,bottom=H*1.08;
-  let a=roadAt(top),b=roadAt(bottom);
-
-  poly([
-    [a.cx-a.w*.56,top],[a.cx+a.w*.56,top],
-    [b.cx+b.w*.56,bottom],[b.cx-b.w*.56,bottom]
-  ],'#414852');
-
-  poly([
-    [a.cx-a.w*.62,top],[a.cx-a.w*.56,top],
-    [b.cx-b.w*.56,bottom],[b.cx-b.w*.62,bottom]
-  ],'#e9e9d9');
-
-  poly([
-    [a.cx+a.w*.56,top],[a.cx+a.w*.62,top],
-    [b.cx+b.w*.62,bottom],[b.cx+b.w*.56,bottom]
-  ],'#e9e9d9');
-
-  for(let i=0;i<14;i++){
-    const f=((i/14+roadOffset)%1);
-    const y=top+f*(bottom-top);
-    const r=roadAt(y);
-    const dashH=5+f*22;
-
-    for(let lane=1;lane<=2;lane++){
-      const x=r.cx-r.w*.56+r.w*1.12*lane/3;
-      ctx.fillStyle='#f5f5dc';
-      ctx.fillRect(x-(1+f*2),y,2+f*4,dashH);
-    }
-
-    if(i%2===0){
-      ctx.fillStyle='#ffffff';
-      ctx.fillRect(r.cx-r.w*.56,y,Math.max(2,f*5),dashH*.55);
-      ctx.fillRect(r.cx+r.w*.56-Math.max(2,f*5),y,Math.max(2,f*5),dashH*.55);
-    }
-  }
-}
-
-function spawnTraffic(){
-  const lane=Math.floor(Math.random()*3)-1;
-  traffic.push({
-    lane,
-    color:colors[Math.floor(Math.random()*colors.length)],
-    z:0
-  });
-}
-
-function spawnCoin(){
-  const lane=Math.floor(Math.random()*3)-1;
-  pickups.push({lane,z:0,got:false});
-}
-
-function project(lane,z){
-  const y=H*.2+z*H*.8;
-  const r=roadAt(y);
-  return {
-    x:r.cx+lane*r.w*.34,
-    y,
-    w:18+z*27,
-    h:32+z*44,
-    r
-  };
-}
+window.addEventListener("resize",resize);
 
 function reset(){
-  elapsed=0;
-  score=0;
-  coins=0;
-  speed=.48;
-  playerX=0;
-  traffic=[];
-  pickups=[];
-  spawn=.5;
-  coinSpawn=1;
-  roadOffset=0;
-  running=true;
-
-  document.getElementById('overlay').style.display='none';
-  last=performance.now();
-  requestAnimationFrame(loop);
+ player={x:55,y:ground-55,w:35,h:55,vy:0,onGround:true};
+ obstacles=[];score=0;speed=5;spawn=60;frame=0;ducking=0;
+ scoreBox.textContent=0;
 }
-
+function startGame(){
+ reset();active=true;paused=false;
+ startBtn.textContent="🔄 RESTART";
+ msg.textContent=lines[0];
+ last=performance.now();
+ requestAnimationFrame(loop);
+}
+function jump(){
+ if(active&&!paused&&player.onGround&&!ducking){
+  player.vy=-13;player.onGround=false;
+ }
+}
+function duck(){
+ if(active&&!paused)ducking=25;
+}
+function pauseGame(){
+ if(!active)return;
+ paused=!paused;
+ msg.textContent=paused?"Game pause hai, bhai!":"CID: Pakdo ise!";
+ if(!paused){last=performance.now();requestAnimationFrame(loop)}
+}
+window.addEventListener("keydown",e=>{
+ if(e.code==="Space"||e.code==="ArrowUp"){e.preventDefault();jump()}
+ if(e.code==="ArrowDown"){e.preventDefault();duck()}
+});
+function rounded(x,y,w,h,r,color){
+ ctx.fillStyle=color;ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);ctx.fill();
+}
+function drawPerson(x,y,cid=false){
+ ctx.save();
+ ctx.strokeStyle=cid?"#182b49":"#28354a";
+ ctx.lineWidth=6;ctx.lineCap="round";
+ ctx.beginPath();ctx.moveTo(x+12,y+38);ctx.lineTo(x+8,y+51);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(x+24,y+38);ctx.lineTo(x+29,y+51);ctx.stroke();
+ rounded(x+5,y+19,27,25,7,cid?"#182b49":"#f28c28");
+ ctx.fillStyle="#b97955";
+ ctx.beginPath();ctx.arc(x+18,y+12,12,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=cid?"#17243a":"#f4f0d2";
+ ctx.fillRect(x+6,y+2,24,6);
+ ctx.fillStyle="#222";
+ ctx.fillRect(x+11,y+12,5,2);ctx.fillRect(x+21,y+12,5,2);
+ if(cid){
+  ctx.fillStyle="white";ctx.font="bold 8px Arial";
+  ctx.fillText("CID",x+10,y+34);
+ }
+ ctx.restore();
+}
+function draw(){
+ if(!W||!H)return;
+ ctx.clearRect(0,0,W,H);
+ let sky=ctx.createLinearGradient(0,0,0,H);
+ sky.addColorStop(0,"#63c8ff");sky.addColorStop(1,"#e0f8ff");
+ ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ // Clouds
+ ctx.fillStyle="white";
+ for(let i=0;i<4;i++){
+  let x=(i*180-frame*0.4)%(W+80);
+  ctx.beginPath();ctx.arc(x,65+i%2*30,16,0,7);
+  ctx.arc(x+20,57+i%2*30,20,0,7);
+  ctx.arc(x+42,66+i%2*30,15,0,7);ctx.fill();
+ }
+ // Buildings
+ for(let i=0;i<8;i++){
+  let x=(i*115-frame*1.2)%(W+120);
+  ctx.fillStyle=i%2?"#91b7c5":"#b0cbd3";
+  ctx.fillRect(x,ground-100-(i%3)*20,55,100+(i%3)*20);
+  ctx.fillStyle="#fff2b0";
+  for(let yy=ground-85;yy<ground-15;yy+=20)
+   for(let xx=x+8;xx<x+48;xx+=18)ctx.fillRect(xx,yy,7,8);
+ }
+ ctx.fillStyle="#38a653";ctx.fillRect(0,ground,W,H-ground);
+ ctx.fillStyle="#e5d3ad";ctx.fillRect(0,ground+12,W,25);
+ ctx.fillStyle="white";
+ for(let x=-(frame*2%75);x<W;x+=75)ctx.fillRect(x,ground+22,35,4);
+ // CID chasing
+ drawPerson(12,ground-55,true);
+ // Obstacles
+ for(const o of obstacles){
+  if(o.type===0){
+   ctx.fillStyle="#ff6b24";ctx.beginPath();
+   ctx.moveTo(o.x+15,o.y);ctx.lineTo(o.x+30,o.y+35);
+   ctx.lineTo(o.x,o.y+35);ctx.fill();
+   ctx.fillStyle="white";ctx.fillRect(o.x+7,o.y+21,16,4);
+  }else{
+   rounded(o.x,o.y,48,27,4,"#e74747");
+   ctx.fillStyle="white";
+   for(let k=4;k<45;k+=16){
+    ctx.beginPath();ctx.moveTo(o.x+k,o.y+26);
+    ctx.lineTo(o.x+k+10,o.y+2);ctx.lineTo(o.x+k+15,o.y+2);
+    ctx.lineTo(o.x+k+5,o.y+26);ctx.fill();
+   }
+  }
+ }
+ // Runner
+ if(player){
+  if(ducking){
+   rounded(player.x,player.y+20,40,28,8,"#f28c28");
+   ctx.fillStyle="#b97955";ctx.beginPath();
+   ctx.arc(player.x+30,player.y+22,10,0,7);ctx.fill();
+  }else drawPerson(player.x,player.y,false);
+ }
+}
 function endGame(){
-  running=false;
-  document.getElementById('overlay').style.display='flex';
-  document.querySelector('#overlay h1').textContent='CRASH!';
-  document.querySelector('#overlay p').innerHTML=
-    `Score: <b>${Math.floor(score)}</b> &nbsp; Coins: <b>${coins}</b><br>Try again and beat your score!`;
-  document.getElementById('start').textContent='RACE AGAIN';
+ active=false;
+ if(score>best){
+  best=score;bestBox.textContent=best;
+  try{localStorage.setItem("cidBest",best)}catch(e){}
+ }
+ msg.textContent="😂 CID: Sahab, ab daud khatam… ab hisaab shuru! Score: "+score;
+ startBtn.textContent="🔄 PHIR SE KHELO";
+ draw();
 }
-
 function loop(now){
-  if(!running)return;
-
-  const dt=Math.min((now-last)/1000,.04);
-  last=now;
-  elapsed+=dt;
-
-  if(brake)speed=Math.max(.25,speed-.8*dt);
-  else speed=Math.min(.92,speed+.08*dt);
-
-  roadOffset=(roadOffset+dt*speed*.42)%1;
-  score+=dt*speed*20;
-
-  playerX+=steer*dt*1.55;
-  playerX=Math.max(-.76,Math.min(.76,playerX));
-
-  spawn-=dt;
-  if(spawn<=0){
-    spawnTraffic();
-    spawn=Math.max(.45,1.2-speed*.65)+Math.random()*.35;
+ if(!active)return;
+ if(paused)return;
+ let dt=Math.min((now-last)/16.67,2);
+ last=now;frame+=dt;
+ score+=Math.max(1,Math.floor(dt));
+ scoreBox.textContent=score;
+ speed=Math.min(10,5+score/300);
+ player.vy+=0.65*dt;
+ player.y+=player.vy*dt;
+ if(player.y>=ground-player.h){
+  player.y=ground-player.h;player.vy=0;player.onGround=true;
+ }
+ if(ducking>0)ducking-=dt;
+ spawn-=dt;
+ if(spawn<=0){
+  obstacles.push({x:W+20,y:ground-(Math.random()<0.5?35:27),
+   type:Math.random()<0.5?0:1,w:30,h:35});
+  spawn=65+Math.random()*45;
+ }
+ for(const o of obstacles)o.x-=speed*dt;
+ obstacles=obstacles.filter(o=>o.x>-60);
+ const ph=ducking>0?35:player.h;
+ const py=ducking>0?player.y+20:player.y;
+ for(const o of obstacles){
+  if(player.x+30>o.x+4&&player.x+5<o.x+(o.type===0?30:48)
+   &&py+ph>o.y+3&&py<o.y+(o.type===0?35:27)){
+   endGame();return;
   }
-
-  coinSpawn-=dt;
-  if(coinSpawn<=0){
-    spawnCoin();
-    coinSpawn=1.1+Math.random()*1.2;
-  }
-
-  traffic.forEach(o=>o.z+=dt*(.19+speed*.7));
-  pickups.forEach(o=>o.z+=dt*(.19+speed*.7));
-
-  traffic=traffic.filter(o=>o.z<1.15);
-  pickups=pickups.filter(o=>o.z<1.08);
-
-  const px=W*.5+playerX*W*.34;
-  const py=H*.82;
-  const pw=Math.min(W*.15,68);
-  const ph=Math.min(H*.17,95);
-
-  for(const o of traffic){
-    const p=project(o.lane,o.z);
-    if(o.z>.78&&o.z<.99&&Math.abs(p.x-px)<(p.w+pw)*.38){
-      endGame();
-      return;
-    }
-  }
-
-  for(const o of pickups){
-    const p=project(o.lane,o.z);
-    if(!o.got&&o.z>.78&&o.z<.98&&Math.abs(p.x-px)<pw*.55){
-      o.got=true;
-      coins++;
-      score+=50;
-    }
-  }
-  pickups=pickups.filter(o=>!o.got);
-
-  background();
-  drawRoad();
-
-  const objs=[
-    ...traffic.map(o=>({type:'car',o})),
-    ...pickups.map(o=>({type:'coin',o}))
-  ].sort((a,b)=>a.o.z-b.o.z);
-
-  for(const item of objs){
-    const o=item.o,p=project(o.lane,o.z);
-    if(item.type==='car')drawCar(p.x,p.y,p.w,p.h,o.color);
-    else drawCoin(p.x,p.y,5+o.z*13);
-  }
-
-  drawCar(px,py,pw,ph,'#12c9e8',true);
-
-  scoreEl.textContent=Math.floor(score);
-  speedEl.textContent=Math.floor(speed*220);
-  coinsEl.textContent=coins;
-
-  requestAnimationFrame(loop);
+ }
+ if(Math.floor(frame)%300===0)msg.textContent=lines[Math.floor(frame/300)%lines.length];
+ draw();
+ requestAnimationFrame(loop);
 }
-
-function setSteer(v){steer=v}
-
-[['left',-1],['right',1]].forEach(([id,v])=>{
-  const b=document.getElementById(id);
-  b.addEventListener('pointerdown',e=>{
-    e.preventDefault();
-    setSteer(v);
-  });
-  ['pointerup','pointercancel','pointerleave'].forEach(ev=>{
-    b.addEventListener(ev,()=>{
-      if(steer===v)setSteer(0);
-    });
-  });
-});
-
-const brakeBtn=document.getElementById('brake');
-brakeBtn.addEventListener('pointerdown',e=>{
-  e.preventDefault();
-  brake=true;
-});
-['pointerup','pointercancel','pointerleave'].forEach(ev=>{
-  brakeBtn.addEventListener(ev,()=>brake=false);
-});
-
-canvas.addEventListener('pointerdown',e=>{
-  if(!running)return;
-  setSteer(e.clientX<W/2?-1:1);
-});
-canvas.addEventListener('pointerup',()=>setSteer(0));
-canvas.addEventListener('pointercancel',()=>setSteer(0));
-
-document.getElementById('start').addEventListener('click',reset);
-
-background();
-drawRoad();
-drawCar(W/2,H*.82,Math.min(W*.15,68),Math.min(H*.17,95),'#12c9e8',true);
-})();
+resize();
 </script>
 </body>
 </html>
-
